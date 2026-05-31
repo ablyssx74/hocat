@@ -339,7 +339,7 @@ public:
 
 private:
     void CheckAndGenerateCert() {
-        const char* certPath = "/boot/home/config/settings/hotcat/hocat_server.pem";
+        const char* certPath = "/boot/home/config/settings/hocat/hocat_server.pem";
         
         // Use standard POSIX access() to check if the certificate already exists
         if (access(certPath, F_OK) == 0) {
@@ -350,14 +350,14 @@ private:
         fTerminalOutput->SetText("--> Generating Self-Signed SSL Certificate in background...\n");
 
         // 1. Build the configuration directory folder paths securely
-        system("mkdir -p /boot/home/config/settings/hotcat");
+        system("mkdir -p /boot/home/config/settings/hocat");
 
         // 2. Run OpenSSL to generate the raw 2048-bit RSA keys and certificate layers
         system("openssl req -newkey rsa:2048 -nodes -keyout /tmp/hocat.key -x509 -days 365 -out /tmp/hocat.crt "
                "-subj \"/C=US/ST=Haiku/L=Virtual/O=HoCat/CN=127.0.0.1\" 2>/dev/null");
 
         // 3. Combine the key and certificate into the single .pem file socat demands
-        system("cat /tmp/hocat.key /tmp/hocat.crt > /boot/home/config/settings/hotcat/hocat_server.pem");
+        system("cat /tmp/hocat.key /tmp/hocat.crt > /boot/home/config/settings/hocat/hocat_server.pem");
 
         // 4. Wipe out the standalone temporary files out of /tmp/
         system("rm -f /tmp/hocat.key /tmp/hocat.crt");
@@ -403,7 +403,7 @@ private:
             else if (label.FindFirst("Secure \"HTTPS\" Web Server Test") != B_ERROR || 
                      label.FindFirst("HTTPS Secure Server") != B_ERROR) {
                
-                srcParam = "openssl-listen:443,cert=/boot/home/config/settings/hotcat/hocat_server.pem,verify=0,crlf,reuseaddr,fork SYSTEM:\"echo HTTP/1.0 200; echo Content-Type\\: text/html; echo; sh -c 'cat << \\\"EOF\\\"\\n<html><body><h1>Welcome to HoCat HTTP Server!</h1><p><b>Current Server Time:</b> \\\"$(date)\\\"</p></body></html>\\nEOF\\n'\"";
+                srcParam = "openssl-listen:443,cert=/boot/home/config/settings/hocat/hocat_server.pem,verify=0,crlf,reuseaddr,fork SYSTEM:\"echo HTTP/1.0 200; echo Content-Type\\: text/html; echo; sh -c 'cat << \\\"EOF\\\"\\n<html><body><h1>Welcome to HoCat HTTP Server!</h1><p><b>Current Server Time:</b> \\\"$(date)\\\"</p></body></html>\\nEOF\\n'\"";
                 isHttpServer = true;
             }
 
