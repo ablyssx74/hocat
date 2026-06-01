@@ -132,7 +132,7 @@ public:
         fDestField = new BMenuField("dest", "Destination Preset:", destMenu);
 
         // 3. Fully Editable Raw Arguments Box
-        fCommandInput = new BTextControl("cmd", "Arguments:", "tcp-listen:8080,reuseaddr stdout", nullptr);
+        fCommandInput = new BTextControl("cmd", "Arguments:", "-v -v  -d -d tcp-listen:8080,reuseaddr stdout", nullptr);
 
         // 4. Action Controls
         fStartButton = new BButton("start", "Run Socat", new BMessage(MSG_START_SOCAT));
@@ -369,7 +369,7 @@ private:
         BMenuItem* srcMarked = fSourceField->Menu()->FindMarked();
         BMenuItem* dstMarked = fDestField->Menu()->FindMarked();
         
-        BString srcParam = "tcp-listen:8080,reuseaddr";
+        BString srcParam = "-v -v  -d -d tcp-listen:8080,reuseaddr";
         BString dstParam = "stdout";
 
         bool isTestMode = false;
@@ -377,9 +377,9 @@ private:
 
         if (srcMarked) {
             BString label = srcMarked->Label();
-            if (label.FindFirst("UDP Listener") != B_ERROR) srcParam = "udp-listen:8080";
-            else if (label.FindFirst("Standard Input") != B_ERROR) srcParam = "stdin";
-            else if (label.FindFirst("input.txt") != B_ERROR) srcParam = "FILE:/boot/home/input.txt";
+            if (label.FindFirst("UDP Listener") != B_ERROR) srcParam = "-v -v  -d -d udp-listen:8080";
+            else if (label.FindFirst("Standard Input") != B_ERROR) srcParam = "-v -v  -d -d stdin";
+            else if (label.FindFirst("input.txt") != B_ERROR) srcParam = "-v -v  -d -d FILE:/boot/home/input.txt";
             
             else if (label.FindFirst("System Info") != B_ERROR) {
                 srcParam = "SYSTEM:\"sysinfo\"";
@@ -396,22 +396,16 @@ private:
             else if (label.FindFirst("HTTP Simple Server") != B_ERROR) {
                 // Wrapping the date macro in explicit escaped internal double-quotes (\\\"$(date)\\\")
                 // ensures that spaces in the timestamp do not break socat's address parameter parser!
-                srcParam = "tcp-listen:8080,crlf,reuseaddr,fork SYSTEM:\"echo HTTP/1.0 200; echo Content-Type\\: text/html; echo; sh -c 'cat << \\\"EOF\\\"\\n<html><body><h1>Welcome to HoCat HTTP Server!</h1><p><b>Current Server Time:</b> \\\"$(date)\\\"</p></body></html>\\nEOF\\n'\"";
+                srcParam = "-v -v  -d -d tcp-listen:8080,crlf,reuseaddr,fork SYSTEM:\"echo HTTP/1.0 200; echo Content-Type\\: text/html; echo; sh -c 'cat << \\\"EOF\\\"\\n<html><body><h1>Welcome to HoCat HTTP Server!</h1><p><b>Current Server Time:</b> \\\"$(date)\\\"</p></body></html>\\nEOF\\n'\"";
                 isHttpServer = true;
             }
             // Map secure memory-backed server
             else if (label.FindFirst("Secure \"HTTPS\" Web Server Test") != B_ERROR || 
                      label.FindFirst("HTTPS Secure Server") != B_ERROR) {
                
-                srcParam = "openssl-listen:443,cert=/boot/home/config/settings/hocat/hocat_server.pem,verify=0,crlf,reuseaddr,fork SYSTEM:\"echo HTTP/1.0 200; echo Content-Type\\: text/html; echo; sh -c 'cat << \\\"EOF\\\"\\n<html><body><h1>Welcome to HoCat HTTP Server!</h1><p><b>Current Server Time:</b> \\\"$(date)\\\"</p></body></html>\\nEOF\\n'\"";
+                srcParam = "-v -v  -d -d openssl-listen:443,cert=/boot/home/config/settings/hocat/hocat_server.pem,verify=0,crlf,reuseaddr,fork SYSTEM:\"echo HTTP/1.0 200; echo Content-Type\\: text/html; echo; sh -c 'cat << \\\"EOF\\\"\\n<html><body><h1>Welcome to HoCat HTTP Server!</h1><p><b>Current Server Time:</b> \\\"$(date)\\\"</p></body></html>\\nEOF\\n'\"";
                 isHttpServer = true;
             }
-
-
-
-
-
-
 
         }
 
