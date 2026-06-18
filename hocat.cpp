@@ -26,6 +26,118 @@
 #include <View.h>
 #include <NodeInfo.h> 
 #include <Alert.h> 
+#include <Notification.h>
+
+namespace AppInfo {
+    static const char* const VERSION_STRING = "HoCat v1.0.2 (Haiku OS)";
+}
+
+bool debugEnable = false;
+bool showUpdateNotifications = true;
+
+// Forward declaration signature for update worker thread
+static int32 BackgroundUpdateChecker(void* data);
+
+// =============================================================================
+// NATIVE ASYNCHRONOUS UPDATE ENGINE IMPLEMENTATION (CURL ENGINE PASS)
+// =============================================================================
+static int32 BackgroundUpdateChecker(void* data) {
+    // Wait a brief 5 seconds after application boot to allow UI rendering to finalize completely
+    snooze(5000000); 
+
+    if (debugEnable) printf("[DEBUG_UPDATE] Asynchronous curl update checker running...\n");
+
+    const char* targetUrl = "https://raw.githubusercontent.com/ablyssx74/hocat/refs/heads/main/VERSION";
+
+    BString shellCmdString;
+    shellCmdString.SetToFormat("curl -sL \"%s\"", targetUrl);
+
+    BString remoteVersionStr = "";
+    
+    FILE* pipeStream = popen(shellCmdString.String(), "r");
+    if (pipeStream != nullptr) {
+        char buffer[128] = {0};
+        if (fgets(buffer, sizeof(buffer), pipeStream) != nullptr) {
+            remoteVersionStr = buffer;
+        }
+        pclose(pipeStream);
+    }
+
+    remoteVersionStr.Trim(); 
+    if (debugEnable) printf("[DEBUG_UPDATE] Raw text received from GitHub: '%s'\n", remoteVersionStr.String());
+
+    remoteVersionStr.Trim(); 
+    if (debugEnable) printf("[DEBUG_UPDATE] Raw text received from GitHub: '%s'\n", remoteVersionStr.String());
+    
+    if (remoteVersionStr.Length() > 0) {
+        BString currentVersionStr = AppInfo::VERSION_STRING;
+        if (debugEnable) printf("[DEBUG_UPDATE] Local AppInfo text before cleaning: '%s'\n", currentVersionStr.String());
+
+        int32 curMajor = 0, curMinor = 0, curRevision = 0;
+        int32 remMajor = 0, remMinor = 0, remRevision = 0;
+
+        // --- Bulletproof sscanf Pattern Matching ---
+        // Looks for a 'v' immediately followed by a number, bypassing words like "HaikuDVR" or "Version"
+        if (sscanf(currentVersionStr.String(), "%*[^v]v%d.%d.%d", &curMajor, &curMinor, &curRevision) != 3) {
+            // Fallback: search for raw dot-separated numbers anywhere if 'v' isn't found
+            sscanf(currentVersionStr.String(), "%*[^0-9]%d.%d.%d", &curMajor, &curMinor, &curRevision);
+        }
+
+        // Parse the remote string from GitHub using the same pattern rules
+        if (sscanf(remoteVersionStr.String(), "%*[^v]v%d.%d.%d", &remMajor, &remMinor, &remRevision) != 3) {
+            sscanf(remoteVersionStr.String(), "%*[^0-9]%d.%d.%d", &remMajor, &remMinor, &remRevision);
+        }
+
+        // Log the cleaned string results visually just for your debug logs
+        if (debugEnable) {
+            printf("[DEBUG_UPDATE] Cleaned local target string: '%d.%d.%d'\n", curMajor, curMinor, curRevision);
+        }
+
+        // Flatten values down into integers for math checks
+        int32 currentFlattened = (curMajor * 10000) + (curMinor * 100) + curRevision;
+        int32 remoteFlattened  = (remMajor * 10000) + (remMinor * 100) + remRevision;
+
+        if (debugEnable) {
+            printf("[DEBUG_UPDATE] Calculated values for math match -> Local: %d | Remote: %d\n", 
+                   (int)currentFlattened, (int)remoteFlattened);
+        }
+
+
+        if (remoteFlattened > currentFlattened) {
+            if (debugEnable) printf("[DEBUG_UPDATE] Update matched! Checking alert preference flags...\n");
+            
+            // =========================================================================
+            // CHANNELS AUTO-HIDE PREFERENCE INTERCEPT
+            // =========================================================================
+            if (!showUpdateNotifications) {
+                if (debugEnable) printf("[DEBUG_UPDATE] Suppressing desktop alert toast\n");
+                return B_OK; // Break out cleanly and silently without throwing the alert box!
+            }
+            // =========================================================================
+
+            // Native Haiku desktop notification banner toast window dispatch engine
+            BNotification updateAlert(B_INFORMATION_NOTIFICATION);
+            updateAlert.SetGroup("HoCat");
+            updateAlert.SetTitle("Update Available");
+            
+            BString alertContent;
+            alertContent << "A newer version of HoCat is available! (v" << remoteVersionStr 
+                         << ")";
+            updateAlert.SetContent(alertContent.String());
+            
+            updateAlert.Send();
+            if (debugEnable) printf("[DEBUG_UPDATE] Toast notification sent successfully.\n");
+        } else {
+            if (debugEnable) printf("[DEBUG_UPDATE] Math complete: Client binary is already completely up to date.\n");
+        }
+    } else {
+        if (debugEnable) printf("[DEBUG_UPDATE] CRITICAL ERR: Raw text data read from pipe buffer was empty!\n");
+    }
+    
+    return B_OK;
+}
+
+
 
 const unsigned char kIconHoCat[] = {
 	0x6e, 0x63, 0x69, 0x66, 0x08, 0x05, 0x00, 0x05, 0xb8, 0x02, 0x00, 0x16, 0x02, 0x3a, 0x69, 0x2e,
@@ -127,8 +239,17 @@ class SocatWindow : public BWindow {
 public:
         SocatWindow() : BWindow(BRect(100, 100, 750, 600), "HoCat \"Socat\" Controller", 
                             B_DOCUMENT_WINDOW, B_QUIT_ON_WINDOW_CLOSE) {
-
-        
+                            	
+                            	
+        // =========================================================================
+        // AUTOMATED BACKGROUND UPDATE CHECKER THREAD INITIALIZATION
+        // =========================================================================
+        thread_id updateThread = spawn_thread(BackgroundUpdateChecker, "UpdateCheckerThread", B_NORMAL_PRIORITY, this);
+        if (updateThread >= 0) {
+            resume_thread(updateThread);
+        }
+        //
+       
         // Build Source PopUp Menu with clean, reliable diagnostic commands
         BPopUpMenu* sourceMenu = new BPopUpMenu("Select Source");
         sourceMenu->AddItem(new BMenuItem("TCP Listener (Port 8080)", new BMessage(MSG_MENU_CHANGED)));
