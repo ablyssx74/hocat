@@ -29,7 +29,7 @@
 #include <Notification.h>
 
 namespace AppInfo {
-    static const char* const VERSION_STRING = "HoCat v1.0.1 (Haiku OS)";
+    static const char* const VERSION_STRING = "HoCat v1.0.2 (Haiku OS)";
 }
 
 bool debugEnable = true;
