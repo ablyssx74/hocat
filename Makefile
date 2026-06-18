@@ -6,7 +6,7 @@ CXXFLAGS = -Wall -O2
 TARGET = HoCat
 PACKAGE_DIR := build/package
 NAME = HoCat
-VERSION = 1.0.2
+VERSION = 1.0.3
 
 # Target Arch
 UNAME_M := $(shell uname -p)

@@ -29,10 +29,10 @@
 #include <Notification.h>
 
 namespace AppInfo {
-    static const char* const VERSION_STRING = "HoCat v1.0.2 (Haiku OS)";
+    static const char* const VERSION_STRING = "HoCat v1.0.3 (Haiku OS)";
 }
 
-bool debugEnable = false;
+bool debugEnable = true;
 bool showUpdateNotifications = true;
 
 // Forward declaration signature for update worker thread
@@ -121,7 +121,7 @@ static int32 BackgroundUpdateChecker(void* data) {
             updateAlert.SetTitle("Update Available");
             
             BString alertContent;
-            alertContent << "A newer version of HoCat is available! (v" << remoteVersionStr 
+            alertContent << "A newer version of HoCat is available! (" << remoteVersionStr 
                          << ")";
             updateAlert.SetContent(alertContent.String());
             
