@@ -29,10 +29,10 @@
 #include <Notification.h>
 
 namespace AppInfo {
-    static const char* const VERSION_STRING = "HoCat v1.0.2 (Haiku OS)";
+    static const char* const VERSION_STRING = "HoCat v1.0.1 (Haiku OS)";
 }
 
-bool debugEnable = false;
+bool debugEnable = true;
 bool showUpdateNotifications = true;
 
 // Forward declaration signature for update worker thread
