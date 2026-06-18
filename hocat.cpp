@@ -32,7 +32,7 @@ namespace AppInfo {
     static const char* const VERSION_STRING = "HoCat v1.0.2 (Haiku OS)";
 }
 
-bool debugEnable = true;
+bool debugEnable = false;
 bool showUpdateNotifications = true;
 
 // Forward declaration signature for update worker thread
